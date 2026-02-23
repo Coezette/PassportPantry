@@ -1,10 +1,28 @@
-asgiref
-Django
-django-cors-headers
-djangorestframework
-djangorestframework-simplejwt
+# asgiref
+# Django
+# django-cors-headers
+# djangorestframework
+# djangorestframework-simplejwt
 PyJWT
 pytz
-sqlparse
+# sqlparse
 psycopg2-binary
 python-dotenv
+
+asgiref==3.7.2
+Django
+django-anymail==9.1
+django-ckeditor==6.7.0
+django-ckeditor-5==0.2.10
+django-cors-headers==3.14.0
+django-dotenv==1.4.2
+django-environ==0.9.0
+django-import-export==3.2.0
+django-jazzmin==2.6.0
+djangorestframework==3.14.0
+drf-yasg==1.21.14
+humanize==4.6.0
+requests==2.31.0
+shortuuid==1.0.11
+sqlparse==0.4.4
+tzdata==2023.3
