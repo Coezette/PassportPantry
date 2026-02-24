@@ -61,8 +61,8 @@ class Country(models.Model):
     flag_emoji = models.CharField(max_length=50, blank=True, null=True)
     continent = models.CharField(max_length=50, blank=True, null=True)
     
-    # class Meta:
-    #     verbose_name_plural = "Countries"
+    class Meta:
+        verbose_name_plural = "Countries"
     
     def recipe_count(self):
         return Recipe.objects.filter(country=self).count()
@@ -95,13 +95,14 @@ class Recipe(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='published')
     view_count = models.IntegerField(default=0)
     likes = models.ManyToManyField(User, null=True, blank=True, related_name='liked_recipes')
+    tags = models.CharField(max_length=200, null=True, blank=True)
     
     def __str__(self):
         return self.title
     
     def save(self, *args, **kwargs):
         if self.slug == "" or self.slug == None:
-            self.slug = slugify(self.title) + '-' + str(self.id)
+            self.slug = slugify(self.title)
         super(Recipe, self).save(*args, **kwargs)
         
     def total_likes(self):
@@ -132,10 +133,12 @@ class PassportStamp(models.Model):
         verbose_name_plural = "Passport Stamps"
     
 class Comment(models.Model):
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    email = models.CharField(max_length=100)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='comments')
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
     content = models.TextField()
+    reply = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -146,15 +149,15 @@ class Comment(models.Model):
         verbose_name_plural = "Comments"
         
 class Notification(models.Model):
-    NOTIFICATINS_TYPES = (
+    NOTIFICATIONS_TYPES = (
         ('like', 'like'),
         ('comment', 'comment'),
         ('stamp', 'stamp'),
     )
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
-    type = models.CharField(max_length=20, choices=NOTIFICATINS_TYPES)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, null=True, blank=True)
+    type = models.CharField(max_length=20, choices=NOTIFICATIONS_TYPES)
     seen = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     

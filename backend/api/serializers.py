@@ -50,6 +50,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = "__all__"
         
 class CountrySerializer(serializers.ModelSerializer):
+    recipe_count = serializers.SerializerMethodField()
     def get_recipe_count(self, country):
         # return country.recipe.count()
         return country.recipe_count()
@@ -110,8 +111,9 @@ class NotificationSerializer(serializers.ModelSerializer):
         else:
             self.Meta.depth = 1
 
-class AuthorSerializer(serializers.Serializer):
+class AuthorStatisticsSerializer(serializers.Serializer):
     views = serializers.IntegerField(default=0)
     likes = serializers.IntegerField(default=0)
     recipes = serializers.IntegerField(default=0)
     stamps_issued = serializers.IntegerField(default=0)
+    

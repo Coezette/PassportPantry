@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -48,3 +48,284 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         user = api_models.User.objects.get(id=user_id)
         return user.userprofile
 
+class CountryListView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    queryset = api_models.Country.objects.all()
+    serializer_class = api_serializers.CountrySerializer
+    # def get_queryset(self):
+    #     return super().get_queryset()
+    
+class CountryRecipeListView(generics.ListAPIView):
+    # queryset = api_models.Recipe.objects.all()
+    serializer_class = api_serializers.RecipeSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        country_id = self.kwargs['country_id']
+        return api_models.Recipe.objects.filter(country__id=country_id, status='published').order_by('-date')
+    
+class RecipeListView(generics.ListAPIView):
+    queryset = api_models.Recipe.objects.all().filter(status='published').order_by('-created_at')
+    serializer_class = api_serializers.RecipeSerializer
+    permission_classes = [AllowAny]
+    
+class RecipeDetailView(generics.RetrieveAPIView):
+    serializer_class = api_serializers.RecipeSerializer
+    permission_classes = [AllowAny]
+    
+    def get_object(self):
+        slug = self.kwargs['slug']
+        recipe = api_models.Recipe.objects.get(slug=slug, status='published')
+        recipe.view_count += 1
+        recipe.save()
+        return recipe
+    
+class LikeRecipeView(APIView):
+    # permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        user_id = request.data['user_id']
+        recipe_id = request.data['recipe_id']
+        
+        user = api_models.User.objects.get(id=user_id)
+        recipe = api_models.Recipe.objects.get(id=recipe_id)        
+        
+        if user in recipe.likes.all():
+            recipe.likes.remove(user)
+            return Response({'message': 'Recipe unliked'}, status=status.HTTP_200_OK)
+        else:
+            recipe.likes.add(user)
+            api_models.Notification.objects.create(
+                user=recipe.author,
+                recipe=recipe,
+                type='like',
+            )
+            return Response({'message': 'Recipe liked'}, status=status.HTTP_200_OK)
+
+class RecipeCommentView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        recipe_id = request.data['recipe_id']
+        name = request.data['name']
+        email = request.data['email']
+        content = request.data['content']
+        
+        recipe = api_models.Recipe.objects.get(id=recipe_id)
+        api_models.Comment.objects.create(
+            recipe=recipe,
+            name=name,
+            content=content,
+            email=email,
+        )
+        
+        api_models.Notification.objects.create(
+            user=recipe.author,
+            recipe=recipe,
+            type='comment',
+        )
+        
+        return Response({'message': 'Comment added'}, status=status.HTTP_201_CREATED)
+    
+class PassportStampView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        user_id = request.data['user_id']
+        recipe_id = request.data['recipe_id']
+        county_id = request.data.get('country_id', None)
+        
+        user = api_models.User.objects.get(id=user_id)
+        recipe = api_models.Recipe.objects.get(id=recipe_id)
+        country = api_models.Country.objects.get(id=county_id) if county_id else None
+        
+        #check if passport stamp exists
+        passport_stamp = api_models.PassportStamp.objects.filter(user=user, recipe=recipe, country=country).first()
+        if passport_stamp:
+            passport_stamp.delete()
+            return Response({'message': 'Country stamp removed'}, status=status.HTTP_200_OK)
+        else:
+            api_models.PassportStamp.objects.create(user=user, recipe=recipe, country=country, stamped_at=datetime.now())
+            
+            api_models.Notification.objects.create(
+                user=recipe.author,
+                recipe=recipe,
+                type='stamp',
+            )
+            return Response({'message': 'Country stamp added'}, status=status.HTTP_201_CREATED)
+        
+#>>>>>>>>>>>Author Dashboard Stats Views>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+class DashboardStatsView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = api_serializers.AuthorStatisticsSerializer
+    
+    def get_queryset(self):
+        user_id = self.kwargs['user_id']
+        user = api_models.User.objects.get(id=user_id)
+        
+        total_views = api_models.Recipe.objects.filter(author=user).aggregate(views=Sum('view_count'))['views']
+        total_recipes = api_models.Recipe.objects.filter(author=user).count()
+        total_likes = api_models.Recipe.objects.filter(author=user).aggregate(likes=Sum('likes'))['likes']
+        passport_stamps_issued = api_models.PassportStamp.objects.filter(recipe__author=user).count()
+        
+        return [
+            {
+                'views': total_views,
+                'likes': total_likes,
+                'recipes': total_recipes,
+                'stamps_issued': passport_stamps_issued,
+            }
+        ]
+        
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class DashboardRecipesListsView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = api_serializers.RecipeSerializer
+    
+    def get_queryset(self):
+        user_id = self.kwargs['user_id']
+        user = api_models.User.objects.get(id=user_id)
+        return api_models.Recipe.objects.filter(author=user).order_by('-created_at')
+    
+class DashboardCommentsListsView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = api_serializers.CommentSerializer
+    
+    def get_queryset(self):
+        user_id = self.kwargs['user_id']
+        user = api_models.User.objects.get(id=user_id)
+        return api_models.Comment.objects.filter(recipe__author=user).order_by('-created_at')
+    
+class DashboardStampsListsView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = api_serializers.PassportStampSerializer
+    
+    def get_queryset(self):
+        user_id = self.kwargs['user_id']
+        user = api_models.User.objects.get(id=user_id)
+        return api_models.PassportStamp.objects.filter(recipe__author=user).order_by('-stamped_at')
+    
+class DashboardNotificationsListsView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = api_serializers.NotificationSerializer
+    
+    def get_queryset(self):
+        user_id = self.kwargs['user_id']
+        user = api_models.User.objects.get(id=user_id)
+        return api_models.Notification.objects.filter(user=user, seen=False).order_by('-created_at')
+    
+class MarkNotificationAsReadView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(request):
+        notification_id = request.data['notification_id']
+        notification = api_models.Notification.objects.get(id=notification_id)
+        notification.seen = True
+        notification.save()
+        return Response({'message': 'Notification marked as read'}, status=status.HTTP_200_OK)
+    
+class ReplyCommentView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(request):
+        comment_id = request.data['comment_id']
+        reply = request.data['reply']
+        
+        parent_comment = api_models.Comment.objects.get(id=comment_id)
+        parent_comment.reply = reply
+        parent_comment.save()
+        
+        return Response({'message': 'Reply added'}, status=status.HTTP_201_CREATED)
+    
+    #>>>>>>>>>>Recipe Creation Views>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+class CreateRecipeView(generics.CreateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = api_serializers.RecipeSerializer
+        
+    def create(self, request, *args, **kwargs):
+        user_id = request.data.get('user_id')
+        country_id = request.data.get('country_id')
+        title = request.data.get('title')
+        description = request.data.get('description')
+        ingredients = request.data.get('ingredients')
+        instructions = request.data.get('instructions')
+        prep_time_minutes = request.data.get('prep_time_minutes')
+        cook_time_minutes = request.data.get('cook_time_minutes')
+        servings = request.data.get('servings')
+        difficulty = request.data.get('difficulty')
+        cover_image = request.data.get('cover_image')
+        status = request.data.get('status', 'published')
+        tags = request.data.get('tags')
+            
+        user = api_models.User.objects.get(id=user_id)
+        country = api_models.Country.objects.get(id=country_id) if country_id else None
+            
+        api_models.Recipe.objects.create(
+            author=user,
+            country=country,
+            title=title,
+            description=description,
+            ingredients=ingredients,
+            instructions=instructions,
+            prep_time_minutes=prep_time_minutes,
+            cook_time_minutes=cook_time_minutes,
+            servings=servings,
+            difficulty=difficulty,
+            cover_image=cover_image,
+            status=status,
+            tags=tags,
+        )
+            
+        return Response({'message': 'Recipe created successfully'}, status=status.HTTP_201_CREATED)
+            
+class RecipeUpdateView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = api_serializers.RecipeSerializer
+    
+    def get_object(self):
+        user_id = self.kwargs['user_id']
+        recipe_id = self.kwargs['recipe_id']
+        
+        user = api_models.User.objects.get(id=user_id)
+        return api_models.Recipe.objects.get(id=recipe_id, author=user)
+    
+    def update(self, request, *args, **kwargs):
+        recipe_instance = self.get_object()
+        
+        country_id = request.data.get('country_id')
+        title = request.data.get('title')
+        description = request.data.get('description')
+        ingredients = request.data.get('ingredients')
+        instructions = request.data.get('instructions')
+        prep_time_minutes = request.data.get('prep_time_minutes')
+        cook_time_minutes = request.data.get('cook_time_minutes')
+        servings = request.data.get('servings')
+        difficulty = request.data.get('difficulty')
+        cover_image = request.data.get('cover_image')
+        status = request.data.get('status', 'published')
+        tags = request.data.get('tags')
+
+        country = api_models.Country.objects.get(id=country_id) if country_id else None
+        recipe_instance.country = country
+        recipe_instance.title = title
+        recipe_instance.description = description
+        recipe_instance.ingredients = ingredients
+        recipe_instance.instructions = instructions
+        recipe_instance.prep_time_minutes = prep_time_minutes
+        recipe_instance.cook_time_minutes = cook_time_minutes
+        recipe_instance.servings = servings
+        recipe_instance.difficulty = difficulty
+        
+        if cover_image:
+            recipe_instance.cover_image = cover_image
+
+        recipe_instance.status = status
+        recipe_instance.tags = tags
+        recipe_instance.save()
+        
+        return Response({'message': 'Recipe updated successfully'}, status=status.HTTP_200_OK)
