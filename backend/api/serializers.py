@@ -57,7 +57,7 @@ class CountrySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = api_models.Country
-        fields = ["id", "name", "iso_code", "recipe_count", "flag_emoji", "continent"]
+        fields = ["id", "name", "iso_code", "recipe_count", "flag_emoji", "continent", "recipes"]
         
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:

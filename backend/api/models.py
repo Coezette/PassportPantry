@@ -60,6 +60,8 @@ class Country(models.Model):
     iso_code = models.CharField(max_length=2, unique=True)
     flag_emoji = models.CharField(max_length=50, blank=True, null=True)
     continent = models.CharField(max_length=50, blank=True, null=True)
+    slug = models.SlugField(unique=True, null=True, blank=True)
+
     
     class Meta:
         verbose_name_plural = "Countries"
@@ -69,6 +71,11 @@ class Country(models.Model):
     
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if self.slug == "" or self.slug == None:
+            self.slug = slugify(self.name)
+        super(Country, self).save(*args, **kwargs)
     
 class Recipe(models.Model):
     STATUS_CHOICES = (
@@ -79,7 +86,7 @@ class Recipe(models.Model):
     
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recipes')
     user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='recipes', null=True, blank=True)
-    country = models.ForeignKey(Country, on_delete=models.SET_NULL, null=True, blank=True)
+    country = models.ForeignKey(Country, on_delete=models.SET_NULL, null=True, blank=True, related_name='recipes')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     ingredients = models.TextField()
