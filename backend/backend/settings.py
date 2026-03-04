@@ -132,7 +132,7 @@ CORS_ALLOWS_CREDENTIALS = True
 
 AUTH_USER_MODEL = 'api.User'
 
-MEDIA_URL = 'recipe_images/'
+MEDIA_URL = 'images/'
 MEDIA_ROOT = BASE_DIR
 
 REST_FRAMEWORK = {

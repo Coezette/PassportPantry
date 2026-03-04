@@ -24,7 +24,7 @@ class User(AbstractUser):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='userprofile')
-    avatar = models.FileField(upload_to='avatars/', null=True, blank=True, default="default/default-user.jpg")
+    avatar = models.FileField(upload_to='images/', null=True, blank=True, default="default/default-user.jpg")
     bio = models.TextField(blank=True, max_length=500)
     username = models.CharField(max_length=200, unique=True)
     full_name = models.CharField(max_length=200, blank=True, null=True)
@@ -97,7 +97,7 @@ class Recipe(models.Model):
     difficulty = models.CharField(max_length=50, blank=True) #choice?
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    cover_image = models.FileField(upload_to='recipe_images/', null=True, blank=True)
+    cover_image = models.FileField(upload_to='images/', null=True, blank=True)
     slug = models.SlugField(unique=True, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='published')
     view_count = models.IntegerField(default=0)
@@ -126,8 +126,6 @@ class Recipe(models.Model):
 class PassportStamp(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='passport_stamps')
     country = models.ForeignKey(Country, on_delete=models.CASCADE)
-    recipe = models.ForeignKey(Recipe, on_delete=models.SET_NULL, null=True, blank=True)
-    note = models.TextField(blank=True, null=True)
     stamped_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):

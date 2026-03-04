@@ -73,6 +73,7 @@ class CommentSerializer(serializers.ModelSerializer):
             self.Meta.depth = 1
 
 class RecipeSerializer(serializers.ModelSerializer):
+    comments = CommentSerializer(many=True, read_only=True)
     class Meta:
         model = api_models.Recipe
         fields = "__all__"

@@ -141,12 +141,12 @@ class PassportStampView(APIView):
         country = api_models.Country.objects.get(id=county_id) if county_id else None
         
         #check if passport stamp exists
-        passport_stamp = api_models.PassportStamp.objects.filter(user=user, recipe=recipe, country=country).first()
+        passport_stamp = api_models.PassportStamp.objects.filter(user=user, country=country).first()
         if passport_stamp:
             passport_stamp.delete()
             return Response({'message': 'Country stamp removed'}, status=status.HTTP_200_OK)
         else:
-            api_models.PassportStamp.objects.create(user=user, recipe=recipe, country=country, stamped_at=datetime.now())
+            api_models.PassportStamp.objects.create(user=user, country=country, stamped_at=datetime.now())
             
             api_models.Notification.objects.create(
                 user=recipe.author,
