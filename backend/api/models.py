@@ -4,8 +4,8 @@ from django.db.models.signals import post_save
 from django.utils.text import slugify
 
 class User(AbstractUser):
-    username = models.CharField(max_length=200, unique=True)
-    full_name = models.CharField(max_length=200, blank=True, null=True)
+    username = models.CharField(max_length=200, unique=True, blank=True, null=True)
+    full_name = models.CharField(max_length=200, null=True)
     email = models.EmailField(unique=True)
     
     USERNAME_FIELD = 'email'

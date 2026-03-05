@@ -30,7 +30,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # full_name is optional; default will be set in User.save() if empty
         user = api_models.User.objects.create(
-            username=validated_data['username'],
+            # username=validated_data['username'],
             full_name=validated_data['full_name'],
             email=validated_data['email'],
         )
