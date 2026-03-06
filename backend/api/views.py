@@ -30,6 +30,7 @@ from api import serializers as api_serializers
 from api import models as api_models
 
 class MyTokenObtainPairView(TokenObtainPairView):
+    # permission_classes = [AllowAny]
     serializer_class = api_serializers.MyTokenObtainPairSerializer
     
 class RegisterView(generics.CreateAPIView):
@@ -37,6 +38,69 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = api_serializers.RegisterSerializer
     
+class PasswordChangeView(generics.CreateAPIView):
+    permission_classes = (AllowAny,)
+    serializer_class = api_serializers.UserSerializer
+    
+    def create(self, request, *args, **kwargs):
+        payload = request.data
+        
+        otp = payload['otp']
+        uidb64 = payload['uidb64']
+        password = payload['password']
+
+        
+
+        user = api_models.User.objects.get(id=uidb64, otp=otp)
+        if user:
+            user.set_password(password)
+            user.otp = ""
+            user.save()
+            
+            return Response( {"message": "Password Changed Successfully"}, status=status.HTTP_201_CREATED)
+        else:
+            return Response( {"message": "An Error Occured"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    
+def generate_numeric_otp(length=7):
+        otp = ''.join([str(random.randint(0, 9)) for _ in range(length)])
+        return otp
+
+class PasswordEmailVerify(generics.RetrieveAPIView):
+    permission_classes = (AllowAny,)
+    serializer_class = api_serializers.UserSerializer
+    
+    def get_object(self):
+        email = self.kwargs['email']
+        user = api_models.User.objects.get(email=email)
+        
+        if user:
+            user.otp = generate_numeric_otp()
+            uidb64 = user.pk
+            
+            refresh = RefreshToken.for_user(user)
+            reset_token = str(refresh.access_token)
+
+            user.reset_token = reset_token
+            user.save()
+
+            link = f"http://localhost:5173/create-new-password?otp={user.otp}&uidb64={uidb64}&reset_token={reset_token}"
+            
+            merge_data = {
+                'link': link, 
+                'username': user.username, 
+            }
+            subject = f"Password Reset Request"
+            text_body = render_to_string("email/password_reset.txt", merge_data)
+            html_body = render_to_string("email/password_reset.html", merge_data)
+            
+            msg = EmailMultiAlternatives(
+                subject=subject, from_email=settings.FROM_EMAIL,
+                to=[user.email], body=text_body
+            )
+            msg.attach_alternative(html_body, "text/html")
+            msg.send()
+        return user
 class UserProfileView(generics.RetrieveUpdateAPIView):
     # queryset = api_models.UserProfile.objects.all()
     # permission_classes = [IsAuthenticated]
@@ -167,14 +231,14 @@ class DashboardStatsView(generics.ListAPIView):
         total_views = api_models.Recipe.objects.filter(author=user).aggregate(views=Sum('view_count'))['views']
         total_recipes = api_models.Recipe.objects.filter(author=user).count()
         total_likes = api_models.Recipe.objects.filter(author=user).aggregate(likes=Sum('likes'))['likes']
-        passport_stamps_issued = api_models.PassportStamp.objects.filter(recipe__author=user).count()
+        passport_stamps = api_models.PassportStamp.objects.filter(user=user).count()
         
         return [
             {
                 'views': total_views,
                 'likes': total_likes,
                 'recipes': total_recipes,
-                'stamps_issued': passport_stamps_issued,
+                'stamps': passport_stamps
             }
         ]
         
@@ -208,7 +272,7 @@ class DashboardStampsListsView(generics.ListAPIView):
     def get_queryset(self):
         user_id = self.kwargs['user_id']
         user = api_models.User.objects.get(id=user_id)
-        return api_models.PassportStamp.objects.filter(recipe__author=user).order_by('-stamped_at')
+        return api_models.PassportStamp.objects.filter(user=user).order_by('-stamped_at')
     
 class DashboardNotificationsListsView(generics.ListAPIView):
     permission_classes = [AllowAny]
@@ -222,7 +286,7 @@ class DashboardNotificationsListsView(generics.ListAPIView):
 class MarkNotificationAsReadView(APIView):
     permission_classes = [AllowAny]
     
-    def post(request):
+    def post(self, request):
         notification_id = request.data['notification_id']
         notification = api_models.Notification.objects.get(id=notification_id)
         notification.seen = True
@@ -232,7 +296,7 @@ class MarkNotificationAsReadView(APIView):
 class ReplyCommentView(APIView):
     permission_classes = [AllowAny]
     
-    def post(request):
+    def post(self, request):
         comment_id = request.data['comment_id']
         reply = request.data['reply']
         

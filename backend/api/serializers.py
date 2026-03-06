@@ -116,5 +116,5 @@ class AuthorStatisticsSerializer(serializers.Serializer):
     views = serializers.IntegerField(default=0)
     likes = serializers.IntegerField(default=0)
     recipes = serializers.IntegerField(default=0)
-    stamps_issued = serializers.IntegerField(default=0)
+    stamps = serializers.IntegerField(default=0)
     
