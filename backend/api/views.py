@@ -9,7 +9,7 @@ from django.utils.encoding import force_bytes
 from django.db.models import Sum
 # Restframework
 from rest_framework import generics
-from rest_framework import status
+from rest_framework import status as response_status
 from rest_framework.decorators import api_view, APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -57,9 +57,9 @@ class PasswordChangeView(generics.CreateAPIView):
             user.otp = ""
             user.save()
             
-            return Response( {"message": "Password Changed Successfully"}, status=status.HTTP_201_CREATED)
+            return Response( {"message": "Password Changed Successfully"}, status=response_status.HTTP_201_CREATED)
         else:
-            return Response( {"message": "An Error Occured"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response( {"message": "An Error Occured"}, status=response_status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     
 def generate_numeric_otp(length=7):
@@ -157,7 +157,7 @@ class LikeRecipeView(APIView):
         
         if user in recipe.likes.all():
             recipe.likes.remove(user)
-            return Response({'message': 'Recipe unliked'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Recipe unliked'}, status=response_status.HTTP_200_OK)
         else:
             recipe.likes.add(user)
             api_models.Notification.objects.create(
@@ -165,7 +165,7 @@ class LikeRecipeView(APIView):
                 recipe=recipe,
                 type='like',
             )
-            return Response({'message': 'Recipe liked'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Recipe liked'}, status=response_status.HTTP_200_OK)
 
 class RecipeCommentView(APIView):
     permission_classes = [AllowAny]
@@ -190,7 +190,7 @@ class RecipeCommentView(APIView):
             type='comment',
         )
         
-        return Response({'message': 'Comment added'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'Comment added'}, status=response_status.HTTP_201_CREATED)
     
 class PassportStampView(APIView):
     permission_classes = [AllowAny]
@@ -208,7 +208,7 @@ class PassportStampView(APIView):
         passport_stamp = api_models.PassportStamp.objects.filter(user=user, country=country).first()
         if passport_stamp:
             passport_stamp.delete()
-            return Response({'message': 'Country stamp removed'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Country stamp removed'}, status=response_status.HTTP_200_OK)
         else:
             api_models.PassportStamp.objects.create(user=user, country=country, stamped_at=datetime.now())
             
@@ -217,7 +217,7 @@ class PassportStampView(APIView):
                 recipe=recipe,
                 type='stamp',
             )
-            return Response({'message': 'Country stamp added'}, status=status.HTTP_201_CREATED)
+            return Response({'message': 'Country stamp added'}, status=response_status.HTTP_201_CREATED)
         
 #>>>>>>>>>>>Author Dashboard Stats Views>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class DashboardStatsView(generics.ListAPIView):
@@ -291,7 +291,7 @@ class MarkNotificationAsReadView(APIView):
         notification = api_models.Notification.objects.get(id=notification_id)
         notification.seen = True
         notification.save()
-        return Response({'message': 'Notification marked as read'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Notification marked as read'}, status=response_status.HTTP_200_OK)
     
 class ReplyCommentView(APIView):
     permission_classes = [AllowAny]
@@ -304,7 +304,7 @@ class ReplyCommentView(APIView):
         parent_comment.reply = reply
         parent_comment.save()
         
-        return Response({'message': 'Reply added'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'Reply added'}, status=response_status.HTTP_201_CREATED)
     
     #>>>>>>>>>>Recipe Creation Views>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 class CreateRecipeView(generics.CreateAPIView):
@@ -323,7 +323,7 @@ class CreateRecipeView(generics.CreateAPIView):
         servings = request.data.get('servings')
         difficulty = request.data.get('difficulty')
         cover_image = request.data.get('cover_image')
-        status = request.data.get('status', 'published')
+        status = request.data.get('status',)
         tags = request.data.get('tags')
             
         user = api_models.User.objects.get(id=user_id)
@@ -345,7 +345,7 @@ class CreateRecipeView(generics.CreateAPIView):
             tags=tags,
         )
             
-        return Response({'message': 'Recipe created successfully'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'Recipe created successfully'}, status=response_status.HTTP_201_CREATED)
             
 class RecipeUpdateView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [AllowAny]
@@ -392,4 +392,4 @@ class RecipeUpdateView(generics.RetrieveUpdateDestroyAPIView):
         recipe_instance.tags = tags
         recipe_instance.save()
         
-        return Response({'message': 'Recipe updated successfully'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Recipe updated successfully'}, status=response_status.HTTP_200_OK)

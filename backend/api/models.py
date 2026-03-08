@@ -95,7 +95,7 @@ class Recipe(models.Model):
     prep_time_minutes = models.IntegerField(null=True, blank=True)
     cook_time_minutes = models.IntegerField(null=True, blank=True)
     servings = models.IntegerField(null=True, blank=True)
-    difficulty = models.CharField(max_length=50, blank=True) #choice?
+    difficulty = models.CharField(max_length=50, null=True, blank=True) #choice?
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     cover_image = models.FileField(upload_to='images/', null=True, blank=True)
@@ -110,7 +110,7 @@ class Recipe(models.Model):
     
     def save(self, *args, **kwargs):
         if self.slug == "" or self.slug == None:
-            self.slug = slugify(self.title)
+            self.slug = slugify(self.title) + str(self.author.id)
         super(Recipe, self).save(*args, **kwargs)
         
     def total_likes(self):
