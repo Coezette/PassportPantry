@@ -43,6 +43,12 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = api_models.User
         fields = "__all__"
+
+class UserPublicSerializer(serializers.ModelSerializer):
+    """Serializer for user data in nested/public responses - excludes sensitive fields"""
+    class Meta:
+        model = api_models.User
+        fields = ['id', 'username', 'email', 'full_name', 'date_joined']
         
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -57,49 +63,32 @@ class CountrySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = api_models.Country
-        fields = ["id", "name", "iso_code", "recipe_count", "flag_emoji", "continent", "recipes"]
+        fields = ["id", "name", "iso_code", "recipe_count", "flag_emoji", "continent"]
         
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = api_models.Comment
         fields = "__all__"
-        
-    def __init__(self, *args, **kwargs):
-        super(CommentSerializer, self).__init__(*args, **kwargs)
-        request = self.context.get('request')
-        if request and request.method == 'POST':
-            self.Meta.depth = 0
-        else:
-            self.Meta.depth = 1
 
 class RecipeSerializer(serializers.ModelSerializer):
     comments = CommentSerializer(many=True, read_only=True)
+    author = UserPublicSerializer(read_only=True)
+    likes = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    
     class Meta:
         model = api_models.Recipe
         fields = "__all__"
-        
-    def __init__(self, *args, **kwargs):
-        super(RecipeSerializer, self).__init__(*args, **kwargs)
-        request = self.context.get('request')
-        if request and request.method == 'POST':
-            self.Meta.depth = 0
-        else:
-            self.Meta.depth = 1
 
 class PassportStampSerializer(serializers.ModelSerializer):
+    user = UserPublicSerializer(read_only=True)
+    
     class Meta:
         model = api_models.PassportStamp
         fields = "__all__"
-        
-    def __init__(self, *args, **kwargs):
-        super(PassportStampSerializer, self).__init__(*args, **kwargs)
-        request = self.context.get('request')
-        if request and request.method == 'POST':
-            self.Meta.depth = 0
-        else:
-            self.Meta.depth = 1
 
 class NotificationSerializer(serializers.ModelSerializer):
+    user = UserPublicSerializer(read_only=True)
+    
     class Meta:
         model = api_models.Notification
         fields = "__all__"
@@ -110,7 +99,7 @@ class NotificationSerializer(serializers.ModelSerializer):
         if request and request.method == 'POST':
             self.Meta.depth = 0
         else:
-            self.Meta.depth = 1
+            self.Meta.depth = 0  # Don't use depth for Notification (we explicitly define user serializer)
 
 class AuthorStatisticsSerializer(serializers.Serializer):
     views = serializers.IntegerField(default=0)

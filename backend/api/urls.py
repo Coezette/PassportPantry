@@ -24,6 +24,6 @@ urlpatterns = [
     path('dashboard/notifications/mark-read/', api_views.MarkNotificationAsReadView.as_view(), name='mark-notification-read'),
     path('dashboard/comments/reply/', api_views.ReplyCommentView.as_view(), name='comment-reply'),
     path('recipes/create/', api_views.CreateRecipeView.as_view(), name='create-recipe'),
-    path('recipes/update/<int:recipe_id>/<int:user_id>/', api_views.RecipeUpdateView.as_view(), name='update-recipe'),
+    path('recipes/update/<int:user_id>/<int:recipe_id>/', api_views.RecipeUpdateView.as_view(), name='update-recipe'),
     # path('recipes/delete/<slug>/', api_views.DeleteRecipeView.as_view
 ]
