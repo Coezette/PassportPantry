@@ -126,7 +126,7 @@ class CountryRecipeListView(generics.ListAPIView):
     
     def get_queryset(self):
         country_id = self.kwargs['country_id']
-        return api_models.Recipe.objects.filter(country__id=country_id, status='published').order_by('-date')
+        return api_models.Recipe.objects.filter(country__id=country_id, status='published').order_by('-created_at')
     
 class RecipeListView(generics.ListAPIView):
     queryset = api_models.Recipe.objects.all().filter(status='published').order_by('-created_at')

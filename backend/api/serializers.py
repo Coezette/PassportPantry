@@ -58,12 +58,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class CountrySerializer(serializers.ModelSerializer):
     recipe_count = serializers.SerializerMethodField()
     def get_recipe_count(self, country):
-        # return country.recipe.count()
+        
         return country.recipe_count()
     
     class Meta:
         model = api_models.Country
-        fields = ["id", "name", "iso_code", "recipe_count", "flag_emoji", "continent"]
+        fields = ["id", "name", "iso_code", "recipe_count", "flag_emoji", "continent", "slug"]
         
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -74,6 +74,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     comments = CommentSerializer(many=True, read_only=True)
     author = UserPublicSerializer(read_only=True)
     likes = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    country = CountrySerializer(read_only=True)  
     
     class Meta:
         model = api_models.Recipe
