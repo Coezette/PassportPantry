@@ -14,8 +14,10 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
+ 
+load_dotenv()
 
-load_dotenv()  # Load environment variables from .env file
+ENVIRONMENT= os.environ.get('ENVIRONMENT', default='production')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,10 +27,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-sm%o!)!4&^s%u#5$0@9o5%sg+@1^trf4$t&&$(1afi#iw(=r85'
+SECRET_KEY = os.environ.get('SECRET_KEY')
+
+# ENCRYPT_KEY = os.environ.get('ENCRYPT_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+if ENVIRONMENT == 'development':
+    DEBUG = True
+else:
+    DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
 
@@ -42,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'admin_honeypot',
     "api",
     "rest_framework",
     "corsheaders",
@@ -175,3 +183,5 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
+
+ACCOUNT_USERNAME_BLACKLIST = ['admin', 'accounts', 'profile', 'recipe', 'maneja']
