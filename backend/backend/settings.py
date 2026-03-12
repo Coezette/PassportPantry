@@ -38,7 +38,9 @@ if ENVIRONMENT == 'development':
 else:
     DEBUG = False
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'passportpantry-production.up.railway.app']
+
+CSRF_TRUSTED_ORIGINS = [ 'https://passportpantry-production.up.railway.app' ]
 
 # Application definition
 
@@ -99,7 +101,7 @@ DATABASES = {
     }
 }
 
-POSTGRES_LOCALLY = False
+POSTGRES_LOCALLY = True
 if ENVIRONMENT == 'production' or POSTGRES_LOCALLY == True:
     DATABASES['default'] = dj_database_url.parse(os.environ.get('DATABASE_URL'))
 
