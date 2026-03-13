@@ -322,7 +322,7 @@ class CreateRecipeView(generics.CreateAPIView):
         cook_time_minutes = request.data.get('cook_time_minutes')
         servings = request.data.get('servings')
         difficulty = request.data.get('difficulty')
-        cover_image = request.data.get('cover_image')
+        cover_image = request.FILES.get('cover_image')
         status = request.data.get('status',)
         tags = request.data.get('tags')
             
@@ -370,7 +370,7 @@ class RecipeUpdateView(generics.RetrieveUpdateDestroyAPIView):
         cook_time_minutes = request.data.get('cook_time_minutes')
         servings = request.data.get('servings')
         difficulty = request.data.get('difficulty')
-        cover_image = request.data.get('cover_image')
+        cover_image = request.FILES.get('cover_image')
         status = request.data.get('status', 'published')
         tags = request.data.get('tags')
 
