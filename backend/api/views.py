@@ -29,6 +29,8 @@ import random
 from api import serializers as api_serializers
 from api import models as api_models
 
+from django.core.files.storage import default_storage
+
 class MyTokenObtainPairView(TokenObtainPairView):
     # permission_classes = [AllowAny]
     serializer_class = api_serializers.MyTokenObtainPairSerializer
@@ -312,6 +314,11 @@ class CreateRecipeView(generics.CreateAPIView):
     serializer_class = api_serializers.RecipeSerializer
         
     def create(self, request, *args, **kwargs):
+        import sys
+        print('=== FILES ===', request.FILES, file=sys.stderr)
+        print('=== COVER IMAGE FROM FILES ===', request.FILES.get('cover_image'), file=sys.stderr)
+        print('=== COVER IMAGE FROM DATA ===', request.data.get('cover_image'), file=sys.stderr)
+        print('=== STORAGE ===', default_storage.__class__, file=sys.stderr)
         user_id = request.data.get('user_id')
         country_id = request.data.get('country_id')
         title = request.data.get('title')
