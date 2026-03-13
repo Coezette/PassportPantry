@@ -208,6 +208,7 @@ ACCOUNT_USERNAME_BLACKLIST = ['admin', 'accounts', 'profile', 'recipe', 'maneja'
 # TEMPORARY DEBUG - to be removed after fixing
 
 import sys
+cloudinary_vars = {k: v for k, v in os.environ.items() if 'CLOUD' in k.upper()}
+print('=== ALL CLOUD VARS ===', cloudinary_vars, file=sys.stderr)
 print('=== CLOUDINARY_CLOUD_NAME ===', os.environ.get('CLOUDINARY_CLOUD_NAME'), file=sys.stderr)
-print('=== STORAGE BACKEND ===', DEFAULT_FILE_STORAGE, file=sys.stderr)
 print('=== ENVIRONMENT ===', ENVIRONMENT, file=sys.stderr)
