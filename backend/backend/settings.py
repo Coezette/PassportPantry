@@ -205,3 +205,10 @@ SIMPLE_JWT = {
 }
 
 ACCOUNT_USERNAME_BLACKLIST = ['admin', 'accounts', 'profile', 'recipe', 'maneja']
+
+# TEMPORARY DEBUG - remove after fixing
+from django.core.files.storage import default_storage
+import sys
+print('=== STORAGE BACKEND ===', default_storage.__class__, file=sys.stderr)
+print('=== CLOUDINARY CLOUD NAME ===', os.environ.get('CLOUDINARY_CLOUD_NAME'), file=sys.stderr)
+print('=== ENVIRONMENT ===', os.environ.get('ENVIRONMENT'), file=sys.stderr)
